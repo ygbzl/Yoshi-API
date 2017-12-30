@@ -76,4 +76,20 @@ RSpec.describe 'NearestGas API', type: :request do
       expect(cache.exist?("#{place_id}")).to be(true)
     end
   end
+
+  describe 'database check' do
+    before :all do
+      get 'http://localhost:3000/nearest_gas', params: { lat: @lat, lng: @lng }
+    end
+
+    it 'should have a Location entry with @lat and @lng' do
+      temp1 = @lat.to_f.round(4)
+      temp2 = @lng.to_f.round(4)
+      expect(Location.find_by(lat: temp1, lng: temp2)).to be_present
+    end
+
+    it 'should have a Zip4 entry' do
+      expect(Zip4.find_by(place_id: 'ChIJ9wwgXR50ZIgRxidB4lNPjzQ')).to be_present
+    end
+  end
 end
