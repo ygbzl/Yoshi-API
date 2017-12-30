@@ -17,7 +17,7 @@ class NearestGasController < ApplicationController
       # find current location id
       set_cur_ID
       if (!@cur_id)
-        render plain:  "invalid request", status: 400
+        render plain:  'invalid request', status: 400
       else
         if(!check_repeat_id)
           # get current location information (json)
@@ -68,8 +68,8 @@ class NearestGasController < ApplicationController
           return cache
         else
           gas_id = get_station_id
-          gas_inform = gas_id == nil ? nil:get_inform(gas_id)
-          Rails.cache.fetch("#{gas_id}", expires_in: 30.days) do
+          gas_inform = gas_id == nil ? nil : get_inform(gas_id)
+          Rails.cache.fetch("#{@cur_id}", expires_in: 30.days) do
             gas_inform
           end
           return gas_inform
