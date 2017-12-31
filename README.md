@@ -3,8 +3,8 @@
 This is my first Rails project.
 It is a restful API that takes a latitue and longitude as params and will return a json with current location and nearest gas station information as response.
 
-* version
-	Rails 5.1.4
+* version  
+	Rails 5.1.4  
 	Ruby 2.3.3
 
 # dependencies
