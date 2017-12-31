@@ -77,6 +77,9 @@ class NearestGasController < ApplicationController
 
       cache2 = Rails.cache.fetch("#{gas_id}")
       if(cache2)
+        Rails.cache.fetch("#{@cur_id}", expires_in: 30.days) do
+          cache2
+        end
         return cache2
       else
         gas_inform = get_inform(gas_id)
