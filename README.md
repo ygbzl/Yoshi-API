@@ -3,8 +3,8 @@
 This is my first Rails project.
 It is a restful API that takes a latitue and longitude as params and will return a json with current location and nearest gas station information as response.
 
-* version
-	Rails 5.1.4
+* version  
+	Rails 5.1.4  
 	Ruby 2.3.3
 
 # dependencies
@@ -29,7 +29,7 @@ It is a restful API that takes a latitue and longitude as params and will return
 	Run 'bundle install' and 'rails db:migrate', then can run the server by 'rails server'
 	For test, first run 'rails db:migrate RAILS_ENV=test', then can run the Rspec by 'bundle exec rspec'
 
-* How to Use
+# How to Use
 	Once the server is running, the server can accpect a request with a latitude and longitude like this:
 
 		GET localhost:3000/nearest_gas?lat=35.939467&lng=-86.656045
@@ -54,7 +54,7 @@ It is a restful API that takes a latitue and longitude as params and will return
     If the params is valid but there is no gas station nearby, then response with status code '204'
     You can see the input case in spec/requests/nearest_gas_spec.rb
 
-* Server Logic and Cache Strategy 
+# Server Logic and Cache Strategy 
 	params: In the format of latitude and longitude, I noticed that 0.0001 equals around 10 meters. Assumed that two locations within 10 meters (actually it's 14.14 meters at most) shared the same addres information, I stored 4 digits (or less) decimal as instance value:
 		lat = 35.939467    >> @lat = 35.9395
 		lng = -86.656045   >> @lng = -86.656
