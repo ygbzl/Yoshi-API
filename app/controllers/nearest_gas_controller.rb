@@ -10,13 +10,16 @@ class NearestGasController < ApplicationController
   # used for approximate query
   RADIUS = 0.001
 
+  # check if params are valid
   before_action :param_check, only: :show
 
   def show
+    # if cached, just return
     unless (cached?)
       # find current location id
       set_cur_ID
       if (!@cur_id)
+        # no place id found
         render plain:  'invalid request', status: 400
       else
         if(!check_repeat_id)
@@ -29,6 +32,7 @@ class NearestGasController < ApplicationController
           # render final result
           result = {"address" => @cur_inform, "nearest_gas_station" => @gas_inform}
           render json: result, status: @gas_inform == nil ? 204 : 200
+          # store cache
           Rails.cache.fetch("#{@lat},#{@lng}", expire_in: 30.days) {result}
         end
       end
@@ -40,6 +44,7 @@ class NearestGasController < ApplicationController
     # search in the database to find another location (B) that has the same place id
     # If B is cached, than we can just response with B's result
     # because A and B share the same place_id, the result must be same
+    # change the query range [0, 10] for performance  
     def check_repeat_id
       entry = Location.where(placeId: @cur_id)
 
@@ -47,6 +52,7 @@ class NearestGasController < ApplicationController
         return false
       end
 
+      # can loop for more, like 50 entries
       entry[0, 10].each do |data|
         cached = Rails.cache.fetch("#{data.lat},#{data.lng}")
         if(cached)
@@ -60,6 +66,9 @@ class NearestGasController < ApplicationController
       return false
     end
 
+    # first do approximate search to check if other near location is cached
+    #  near location within RADIUS, the gas station should be same
+    # then query for detailed gas information
     def get_station_inform
       entry = Location.where(lat: @lat - RADIUS .. @lat + RADIUS, lng: @lng - RADIUS .. @lng + RADIUS)
 
@@ -70,22 +79,27 @@ class NearestGasController < ApplicationController
         end
       end
 
+      # query from Google API to get gas_id
       gas_id = get_station_id
       if (gas_id == nil)
         return nil
       end
 
+      # check second cache
       cache2 = Rails.cache.fetch("#{gas_id}")
       if(cache2)
+        # store cur_id for next approximate search
         Rails.cache.fetch("#{@cur_id}", expires_in: 30.days) do
           cache2
         end
         return cache2
       else
         gas_inform = get_inform(gas_id)
+        # store cur_id for next approximate search
         Rails.cache.fetch("#{@cur_id}", expires_in: 30.days) do
           gas_inform
         end
+        # store gas_id for next second cache check
         Rails.cache.fetch("#{gas_id}", expires_in: 30.days) do
           gas_inform
         end
@@ -103,7 +117,6 @@ class NearestGasController < ApplicationController
       rescue
         return nil
       end
-
     end
 
     #get the detailed location information by place_id and parse it to a json
@@ -133,13 +146,14 @@ class NearestGasController < ApplicationController
           end
         end
 
+        # get the zip4 code, add it to the inform
         append_zip(inform, place_id)
         return inform
       end
     end
 
-    # get the 4-zipcode, append it to the inform json
-    # first search in the databse
+    # get the 4-zip code, append it to the inform json
+    # first search in the database
     # if not exist, then make a query to zip api
     def append_zip(inform, id)
       entry = Zip4.find_by(place_id: id)
