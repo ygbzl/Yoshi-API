@@ -62,18 +62,31 @@ class NearestGasController < ApplicationController
 
     def get_station_inform
       entry = Location.where(lat: @lat - RADIUS .. @lat + RADIUS, lng: @lng - RADIUS .. @lng + RADIUS)
+
       entry[0, 10].each do |data|
         cache = Rails.cache.fetch("#{data.placeId}")
         if(cache)
           return cache
-        else
-          gas_id = get_station_id
-          gas_inform = gas_id == nil ? nil : get_inform(gas_id)
-          Rails.cache.fetch("#{@cur_id}", expires_in: 30.days) do
-            gas_inform
-          end
-          return gas_inform
         end
+      end
+
+      gas_id = get_station_id
+      if (gas_id == nil)
+        return nil
+      end
+
+      cache2 = Rails.cache.fetch("#{gas_id}")
+      if(cache2)
+        return cache2
+      else
+        gas_inform = get_inform(gas_id)
+        Rails.cache.fetch("#{@cur_id}", expires_in: 30.days) do
+          gas_inform
+        end
+        Rails.cache.fetch("#{gas_id}", expires_in: 30.days) do
+          gas_inform
+        end
+        return gas_inform
       end
     end
 
