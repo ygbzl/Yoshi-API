@@ -99,8 +99,18 @@ It is a restful API that takes a latitue and longitude as params and will return
 
 					entry1 is the current location, by approximate search (0.001 difference in lat or lng, about 100 meters), we get the entry2, then check Second Cache with 'abcd222'.
 
-				If Second Cache hit, then all the json result is got as we have current location information and nearest gas station information.
-				If cache miss, then query from Google API 
+				If Second Cache hit with a cache_result, then all the json result is got as we have current location information and nearest gas station information.
+
+				If cache miss, then query from Google API to get the nearest gas station place id, check second cache with this id again, if hit return the value and store Second Cache with <cur_id, cache_result>. If miss, query to google API to get the station detailed information, store second cache with <cur_id, station detailed information> and <gas_station_id, station detailed information>.
+
+				5. response with the full json result. Store First Cache with <"#{@lat},#{@lng}", full json result>
+
+		Note: the cache strategy is based on some assumption:
+			1. latitude and longitude differ less than 0.0001 (10 meters) point to a same address
+			2. latitude and longitude differ more than 0.0001 (10 meters) point to different address (actually, only after get the place_id can we know whether it's same)
+			3. two locations within 100 meters (141.4 meters at most), they have the same nearest gas station.
+
+			And it's a trade off between cache hit rate and response information accuracy. Considering the performance, We can afford to lose some accuracy.
 
 
 
