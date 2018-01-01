@@ -28,6 +28,8 @@ It is a restful API that takes a latitue and longitude as params and will return
 # How to Run/Test
 	Run 'bundle install' and 'rails db:migrate', then can run the server by 'rails server'
 	For test, first run 'rails db:migrate RAILS_ENV=test', then can run the Rspec by 'bundle exec rspec'
+	* Three of the test case may be failed. The reason of that is google API sometimes returns different results for 
+	the same request. So the expect result may no be correct on in time.
 
 # How to Use
 	Once the server is running, the server can accpect a request with a latitude and longitude like this:
