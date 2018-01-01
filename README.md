@@ -1,7 +1,8 @@
 # README
 
 This is my first Rails project.
-It is a restful API that takes a latitue and longitude as params and will return a json with current location and nearest gas station information as response.
+It is a restful API that takes a latitue and longitude as params and will return a json with current location and 
+nearest gas station information as response.
 
 * version  
 	Rails 5.1.4  
@@ -21,7 +22,9 @@ It is a restful API that takes a latitue and longitude as params and will return
 
 		US Street Address API: https://smartystreets.com/products/apis/us-street-api
 			used for query ZIP+4 codes
-			note: Because Google API does not provide zip+4 code, I have to rely on this API to meet the requirement. However, this API only has 250 free quota per month. USPS API can also provide this service as we follow the policies.
+			note: Because Google API does not provide zip+4 code, I have to rely on this API to meet the requirement. 
+			However, this API only has 250 free quota per month. USPS API can also provide this service as we follow the
+			policies.
 
 	Database: sqlite3
 
@@ -52,12 +55,15 @@ It is a restful API that takes a latitue and longitude as params and will return
       }
     }
 
-    If the params latitude and longitude is lack, or is not a numeric, or is out of range, or there is no street in that location, then the server will return an error response with status code '400'.
+    If the params latitude and longitude is lack, or is not a numeric, or is out of range, or there is no street in that 
+    location, then the server will return an error response with status code '400'.
     If the params is valid but there is no gas station nearby, then response with status code '204'
     You can see the input case in spec/requests/nearest_gas_spec.rb
 
 # Server Logic and Cache Strategy 
-	params: In the format of latitude and longitude, I noticed that 0.0001 equals around 10 meters. Assumed that two locations within 10 meters (actually it's 14.14 meters at most) shared the same addres information, I stored 4 digits (or less) decimal as instance value:
+	params: In the format of latitude and longitude, I noticed that 0.0001 equals around 10 meters. Assumed that two 
+	locations within 10 meters (actually it's 14.14 meters at most) shared the same addres information, I stored 4 
+	digits (or less) decimal as instance value:
 		lat = 35.939467    >> @lat = 35.9395
 		lng = -86.656045   >> @lng = -86.656
 	By doing this, the server can treat two near request as the same one.
@@ -73,46 +79,61 @@ It is a restful API that takes a latitue and longitude as params and will return
 			Key: current place id, value: the json result of nearest gas station, expires_in: 30 days
 			Key: gas station place id, value: the json result of nearest gas station, expires_in: 30 days
 
-			(current place id is the place_id queried from Google API by @lat and @lng, and the gas station place id is the nearest gas station, the value is the second part of the final json result, 'nearest_gas_station'. Actually these are two schema with the same format)
+			(current place id is the place_id queried from Google API by @lat and @lng, and the gas station place id is 
+			the nearest gas station, the value is the second part of the final json result, 'nearest_gas_station'. Actually these are two schema with the same format)
 
 	cache strategy:
-		with the above database schema and cache schema, once the server gets @lat and @lng, the cache strategy is implemented in this way:
+		with the above database schema and cache schema, once the server gets @lat and @lng, the cache strategy is 
+		implemented in this way:
 
 			1. Check in First Cache, if cache hit, return the cache value
 			if cache miss, then:
 
 				2. Check in Location table, if there exists an entry, get the cur_id (current place id),
 				if not exist, query from Google API to get the cur_id, and store into the database. 
-				(note:for the current place id, I did not implement approximate search, that means for each different pair of @lat, @lng, at least one request is sent to Google API and will be store in the database. The reason I do this way is that I noticed even two location differ by 0.0001 like (@lat = 37.778, @lng = -122.4119) and (@lat = 37.778, @lng = -122.4120) can have different street number).
+				(note:for the current place id, I did not implement approximate search, that means for each different 
+				pair of @lat, @lng, at least one request is sent to Google API and will be store in the database. The 
+				reason I do this way is that I noticed even two location differ by 0.0001 like (@lat = 37.778, @lng = 
+				-122.4119) and (@lat = 37.778, @lng = -122.4120) can have different street number).
 				get the current address information by query to Google API with cur_id.
 
-				3. Check repeated current place id. Once get cur_id, search other entries with the same cur_id in Location table. Check First Cache again by these entries's lat and lng. Example:
+				3. Check repeated current place id. Once get cur_id, search other entries with the same cur_id in 
+				Location table. Check First Cache again by these entries's lat and lng. Example:
 
 					entry1 lat = 37.778, lng = -122.4119, placeId = "abcd"
 					entry2 lat = 37.778, lng = -122.4118, placeId = "abcd"
 
-					entry1 is what we are dealing with now, we find the entry2, then check in First Cache to see if '37.778,-122.4118' is cached.
+					entry1 is what we are dealing with now, we find the entry2, then check in First Cache to see if 
+					'37.778,-122.4118' is cached.
 					(note: I am not sure if this step is necessary, because this may cost more time on database query)
 
-				4. Get the nearest gas station place_id. First do approximate search in Location table to find a place_id within 100 meters, then check Second Cache, example:
+				4. Get the nearest gas station place_id. First do approximate search in Location table to find a 
+				place_id within 100 meters, then check Second Cache, example:
 
 					entry1 lat = 37.778, lng = -122.4119, placeId = "abcd111"
 					entry2 lat = 37.7785, lng = -122.4129, placeId = "abcd222"
 
-					entry1 is the current location, by approximate search (0.001 difference in lat or lng, about 100 meters), we get the entry2, then check Second Cache with 'abcd222'.
+					entry1 is the current location, by approximate search (0.001 difference in lat or lng, about 100 
+					meters), we get the entry2, then check Second Cache with 'abcd222'.
 
-				If Second Cache hit with a cache_result, then all the json result is got as we have current location information and nearest gas station information.
+				If Second Cache hit with a cache_result, then all the json result is got as we have current location 
+				information and nearest gas station information.
 
-				If cache miss, then query from Google API to get the nearest gas station place id, check second cache with this id again, if hit return the value and store Second Cache with <cur_id, cache_result>. If miss, query to google API to get the station detailed information, store second cache with <cur_id, station detailed information> and <gas_station_id, station detailed information>.
+				If cache miss, then query from Google API to get the nearest gas station place id, check second cache 
+				with this id again, if hit return the value and store Second Cache with <cur_id, cache_result>. If miss, 
+				query to google API to get the station detailed information, store second cache with <cur_id, station 
+				detailed information> and <gas_station_id, station detailed information>.
 
 				5. response with the full json result. Store First Cache with <"#{@lat},#{@lng}", full json result>
 
 		Note: the cache strategy is based on some assumption:
 			1. latitude and longitude differ less than 0.0001 (10 meters) point to a same address
-			2. latitude and longitude differ more than 0.0001 (10 meters) point to different address (actually, only after get the place_id can we know whether it's same)
+			2. latitude and longitude differ more than 0.0001 (10 meters) point to different address (actually, only 
+			after get the place_id can we know whether it's same)
 			3. two locations within 100 meters (141.4 meters at most), they have the same nearest gas station.
 
-			And it's a trade off between cache hit rate and response information accuracy. Considering the performance, We can afford to lose some accuracy.
+			And it's a trade off between cache hit rate and response information accuracy. Considering the performance, 
+			We can afford to lose some accuracy.
 
 
 
