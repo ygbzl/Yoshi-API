@@ -7,10 +7,10 @@ RSpec.describe 'NearestGas API', type: :request do
     @lng = -86.656045
     @valid_response = {
       address: {
-        streetAddress: '2501 York Road',
+        streetAddress: '101 King Street',
         city: 'Nolensville',
         state: 'TN',
-        postalCode: '37135-9790'
+        postalCode: '37135-9453'
       },
       nearest_gas_station: {
         streetAddress: '910 Oldham Drive',
@@ -19,6 +19,8 @@ RSpec.describe 'NearestGas API', type: :request do
         postalCode: '37135-9454'
       }
     }.to_json
+    Zip4.delete_all
+    Location.delete_all
   end
 
   describe 'edge case input test' do
@@ -71,7 +73,7 @@ RSpec.describe 'NearestGas API', type: :request do
       get 'http://localhost:3000/nearest_gas', params: { lat: @lat, lng: @lng }
       temp1 = @lat.to_f.round(4)
       temp2 = @lng.to_f.round(4)
-      place_id = 'ChIJ9wwgXR50ZIgRxidB4lNPjzQ'
+      place_id = 'ChIJhdHli612ZIgR7TwNVWcuTDQ'
       expect(cache.exist?("#{temp1},#{temp2}")).to be(true)
       expect(cache.exist?("#{place_id}")).to be(true)
     end
@@ -89,7 +91,7 @@ RSpec.describe 'NearestGas API', type: :request do
     end
 
     it 'should have a Zip4 entry' do
-      expect(Zip4.find_by(place_id: 'ChIJ9wwgXR50ZIgRxidB4lNPjzQ')).to be_present
+      expect(Zip4.find_by(place_id: 'ChIJhdHli612ZIgR7TwNVWcuTDQ')).to be_present
     end
   end
 end
