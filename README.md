@@ -126,7 +126,8 @@ nearest gas station information as response.
 
 				5. response with the full json result. Store First Cache with <"#{@lat},#{@lng}", full json result>
 
-		Note: the cache strategy is based on some assumption:
+		Note: 
+		    the cache strategy is based on some assumption:
 			1. latitude and longitude differ less than 0.0001 (10 meters) point to a same address
 			2. latitude and longitude differ more than 0.0001 (10 meters) point to different address (actually, only 
 			after get the place_id can we know whether it's same)
@@ -134,6 +135,12 @@ nearest gas station information as response.
 
 			And it's a trade off between cache hit rate and response information accuracy. Considering the performance, 
 			We can afford to lose some accuracy.
+			
+			Because Google policies do not allow to store the address information except of place_id, I use database to 
+			store place_id and use Rails.cache to store the json response from Google expired in 30 days which is the 
+			longest time allowed.
+			We can also temporarily store the json response in database and check the created_date while querying the 
+			database. But I think it can be a little slower.
 
 
 
