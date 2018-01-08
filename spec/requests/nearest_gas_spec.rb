@@ -7,12 +7,12 @@ RSpec.describe 'NearestGas API', type: :request do
     @lng = -86.656045
     @valid_response = {
       address: {
-        # streetAddress: '101 King Street',
-        streetAddress: '2501 York Road',
+        streetAddress: '101 King Street',
+        # streetAddress: '2501 York Road',
         city: 'Nolensville',
         state: 'TN',
-        # postalCode: '37135-9453'
-        postalCode: '37135-9790'
+        postalCode: '37135-9453'
+        # postalCode: '37135-9790'
       },
       nearest_gas_station: {
         streetAddress: '910 Oldham Drive',
@@ -75,8 +75,8 @@ RSpec.describe 'NearestGas API', type: :request do
       get 'http://localhost:3000/nearest_gas', params: { lat: @lat, lng: @lng }
       temp1 = @lat.to_f.round(4)
       temp2 = @lng.to_f.round(4)
-      # place_id = 'ChIJhdHli612ZIgR7TwNVWcuTDQ'
-      place_id = 'ChIJnVIOzk1xZIgRE9syXSr9uT4'
+      place_id = 'ChIJhdHli612ZIgR7TwNVWcuTDQ'
+      # place_id = 'ChIJnVIOzk1xZIgRE9syXSr9uT4'
       expect(cache.exist?("#{temp1},#{temp2}")).to be(true)
       expect(cache.exist?("#{place_id}")).to be(true)
     end
@@ -94,8 +94,8 @@ RSpec.describe 'NearestGas API', type: :request do
     end
 
     it 'should have a Zip4 entry' do
-      # alt ChIJhdHli612ZIgR7TwNVWcuTDQ
-      expect(Zip4.find_by(place_id: 'ChIJnVIOzk1xZIgRE9syXSr9uT4')).to be_present
+      # alt ChIJhdHli612ZIgR7TwNVWcuTDQ ChIJnVIOzk1xZIgRE9syXSr9uT4
+      expect(Zip4.find_by(place_id: 'ChIJhdHli612ZIgR7TwNVWcuTDQ')).to be_present
     end
   end
 end
